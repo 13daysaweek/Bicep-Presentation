@@ -3,15 +3,19 @@ This example shows how Bicep can automatically determine dependencies between re
 
 Observe that in the Bicep template, we set the ID of the network interface:
 
-`networkInterfaces: [
+```
+networkInterfaces: [
   {
     id: nic.id
   }
-]`
+]
+```
 
 `nic.id` is a symbolic reference, using the `nic` resource we defined earlier in the template.  Since we used a symbolic reference, when Bicep transpiles to ARM JSON, it's able to determine that the VM depends on the network interface.  In the resulting ARM template, we can see that the VM has two dependencies defined, one for the network interface and one for the storage account.
 
-`"dependsOn": [
+```
+"dependsOn": [
   "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
   "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
-]`
+]
+```
