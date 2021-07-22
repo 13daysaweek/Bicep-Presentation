@@ -1,0 +1,32 @@
+name: Infrastructure Deploy
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+    - main
+
+jobs:
+  deploy:
+    environment: development
+    runs-on: ubuntu-latest
+    env:
+      resourceGroupName: my-rg
+      storageAccountName: cmhstore01
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    
+    - name: Az CLI Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy Infrastructure
+      run: |
+        az bicep build --file $GITHUB_WORKSPACE/07-DevOps/maintemplate.bicep
+        DEPLOYMENT_NAME="infra-deploy-$(date '+%F_%H_%M_%S')"
+        echo "Using deployment name $DEPLOYMENT_NAME"
+        az deployment group create -g ${{ env.resourceGroupName }} -n $DEPLOYMENT_NAME --template-file $GITHUB_WORKSPACE/07-DevOps/maintemplate.bicep --parameters storageAccountName=${{ env.storageAccountName }}

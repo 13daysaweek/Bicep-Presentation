@@ -1,0 +1,56 @@
+trigger:
+  branches:
+    include:
+    - main
+
+pr:
+  branches:
+    exclude:
+    - '*'
+
+variables:
+- name: storageAccountName
+  value: cmhstore01
+- name: resourceGroupName
+  value: my-rg
+
+stages:
+- stage: BuildInfrastructure
+  jobs:
+  - job: Build
+    steps:
+    - task: AzureCLI@2
+      displayName: Build Bicep template
+      inputs:
+        azureSubscription: AIRS
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az bicep install
+          az bicep build --file $(System.DefaultWorkingDirectory)/samples/07-DevOps/maintemplate.bicep
+    
+    - task: PublishPipelineArtifact@1
+      displayName: Publish infra artifacts
+      inputs:
+        targetPath: $(System.DefaultWorkingDirectory)/samples/07-DevOps/
+        artifact: infrastructure
+        publishLocation: pipeline
+
+- stage: DeployInfrastructure
+  jobs:
+  - job: Deploy
+    steps:
+    - download: current
+      displayName: Download infrastructure artifact
+      artifact: infrastructure
+
+    - task: AzureCLI@2
+      displayName: Deploy infrastructure
+      inputs:
+        azureSubscription: AIRS
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          DEPLOYMENT_NAME="infra-deploy-$(date '+%F_%H_%M_%S')"
+          echo "Using deployment name $DEPLOYMENT_NAME"
+          az deployment group create -g $(resourceGroupName) -n $DEPLOYMENT_NAME --template-file $(Pipeline.Workspace)/infrastructure/maintemplate.bicep --parameters storageAccountName=$(storageAccountName)
