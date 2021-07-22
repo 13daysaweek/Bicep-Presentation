@@ -444,5 +444,11 @@
         }
       ]
     }
-  ]
+  ],
+  "outputs": {
+    "apimWorkspaceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ApiManagement/service', variables('apiManagementServiceName'))]"
+    }
+  }
 }
