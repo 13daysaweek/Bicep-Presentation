@@ -1,0 +1,95 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.4.451.19169",
+      "templateHash": "1251794851056384585"
+    }
+  },
+  "parameters": {
+    "storageAccountBaseName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "numberOfStorageAccounts": {
+      "type": "int"
+    }
+  },
+  "functions": [],
+  "variables": {
+    "subnets": [
+      {
+        "name": "web",
+        "subnetPrefix": "10.0.0.0/24"
+      },
+      {
+        "name": "api",
+        "subnetPrefix": "10.0.1.0/24"
+      },
+      {
+        "name": "db",
+        "subnetPrefix": "10.0.2.0/24"
+      }
+    ]
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "storageAccountResources",
+        "count": "[length(range(0, parameters('numberOfStorageAccounts')))]"
+      },
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-04-01",
+      "name": "[format('{0}{1}', parameters('storageAccountBaseName'), range(0, parameters('numberOfStorageAccounts'))[copyIndex()])]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "accessTier": "Hot",
+        "encryption": {
+          "keySource": "Microsoft.Storage",
+          "services": {
+            "blob": {
+              "enabled": true
+            },
+            "file": {
+              "enabled": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2021-02-01",
+      "name": "vnet",
+      "location": "[parameters('location')]",
+      "properties": {
+        "copy": [
+          {
+            "name": "subnets",
+            "count": "[length(variables('subnets'))]",
+            "input": {
+              "name": "[variables('subnets')[copyIndex('subnets')].name]",
+              "properties": {
+                "addressPrefix": "[variables('subnets')[copyIndex('subnets')].subnetPrefix]"
+              }
+            }
+          }
+        ],
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/8"
+          ]
+        }
+      }
+    }
+  ]
+}
