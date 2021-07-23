@@ -1,18 +1,43 @@
 param webAppName string
 param location string
-param createAppInsights bool
+param vnetIntegration bool = false
 
+var aspName = 'asp-${webAppName}'
+var vnetName = '${webAppName}-vnet'
 
-var servicePlanName = 'asp-${webAppName}'
-var workspaceName = '${webAppName}-la'
-var appInsightsName = '${webAppName}-ai'
-
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-01-15' = {
-  name: servicePlanName
+resource serverFarm 'Microsoft.Web/serverfarms@2021-01-15' = {
+  name: aspName
   location: location
   sku: {
     name: 'S1'
-    capacity: 1
+  }
+}
+
+resource vnet 'Microsoft.Network/virtualNetworks@2021-02-01' = if(vnetIntegration) {
+  name: vnetName
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        '10.0.0.0/8'
+      ]
+    }
+    subnets: [
+      {
+        name: 'web'
+        properties: {
+          addressPrefix: '10.0.0.0/24'
+          delegations: [
+            {
+              name: 'webDelegation'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
+        }
+      }
+    ]
   }
 }
 
@@ -20,43 +45,12 @@ resource webApp 'Microsoft.Web/sites@2021-01-15' = {
   name: webAppName
   location: location
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: serverFarm.id
+    virtualNetworkSubnetId: vnetIntegration ? vnet.properties.subnets[0].id : ''
     httpsOnly: true
     siteConfig: {
-      minTlsVersion: '1.2'
+      vnetRouteAllEnabled: true
+      http20Enabled: true
     }
-  }
-}
-
-resource appServiceAppSettings 'Microsoft.Web/sites/config@2021-01-15' = if(createAppInsights) {
-  parent: webApp
-  name: 'appsettings'
-  properties: {
-    APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
-  }
-}
-
-resource appServiceExtension 'Microsoft.Web/sites/siteextensions@2021-01-15' = if(createAppInsights) {
-  name: '${webApp.name}/Microsoft.ApplicationInsights.AzureWebsites'
-}
-
-resource workspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = if(createAppInsights) {
-  name: workspaceName
-  location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
-    retentionInDays: 120
-  }
-}
-
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = if(createAppInsights) {
-  name: appInsightsName
-  location: location
-  kind: 'web'
-  properties: {
-    Application_Type: 'web'
-    WorkspaceResourceId: workspace.id
   }
 }
