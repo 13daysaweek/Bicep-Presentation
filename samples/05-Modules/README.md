@@ -1,0 +1,6 @@
+# Modules
+This example shows how to organize resources in reusable modules.  Modules have been created for various types including App Service, Key Vault and Storage.  These modules are then referenced in a main template.
+
+Observe that there is no special syntax for defining a module, it is simple a .bicep file with input parameters that defines one or more resources.  We can consume a module by using the `module` keyword in our main template and then providing the path to the module file.  For each module we consume, we must give it a name as well as values for any input parameters exposed by the module.  Note that the name we provide when we consume a module is the *deployment name*, not the name of the resource that will be provisioned.
+
+Observe that for each consumed module in the bicep file, the resulting ARM JSON file will have a corresponding nested resource deployment (resource of type Microsoft.Resources/deployments).  The nested resource deployment will define the type of resource that was defined in the corresponding Bicep module.  Observe that the name property we defined on each consumed module in our Bicep template is used to name the corresponding nested resource deployment in the ARM JSON file.
