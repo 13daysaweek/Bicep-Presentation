@@ -1,8 +1,4 @@
 # Introduction to Project Bicep
-
-## Presentation
-...
-
 ## Samples
 * [Hello Bicep](samples/00-Hello-Bicep/)
 * [Simple Resource](samples/01-Simple-Resource/)
