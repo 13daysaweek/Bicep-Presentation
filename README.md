@@ -8,3 +8,4 @@
 * [Modules](samples/05-Modules/)
 * [Metadata](samples/06-Metadata/)
 * [DevOps](samples/07-DevOps/)
+* [Private Registries](samples/08-Private-Registry/)
